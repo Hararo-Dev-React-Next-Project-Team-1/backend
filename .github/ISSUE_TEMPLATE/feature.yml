@@ -22,11 +22,3 @@ body:
       placeholder: 목록을 작성해주세요.
     validations:
       required: true
-  - type: textarea
-    id: reproduction
-    attributes:
-      label: 🔍 접근 방법
-      description: 고려하신 방법이나, 접근에 대해서 설명해주세요.
-      placeholder: 설명을 작성해주세요.
-    validations:
-      required: true
