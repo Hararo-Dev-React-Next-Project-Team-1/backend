@@ -1,7 +1,7 @@
-import type { NextConfig } from "next";
+// next.config.ts
 
-const nextConfig: NextConfig = {
-  /* config options here */
+const nextConfig = {
+  turbopack: false, // ✅ Webpack을 강제로 사용하게 함
 };
 
 export default nextConfig;

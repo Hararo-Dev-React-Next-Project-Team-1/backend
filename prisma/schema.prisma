@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL") // .env에 DB 연결 정보 작성
+}
+
+model Room {
+  id         BigInt     @id @default(autoincrement())
+  title      String     @db.VarChar(50)
+  code       BigInt     @unique
+  is_closed  Boolean    @default(false)
+  file       Bytes?
+  created_at String     @db.VarChar(25) // ✅ 여기 DateTime → String 으로 수정
+  questions  Question[]
+}
+
+model Question {
+  question_id BigInt   @id @default(autoincrement())
+  room        Room     @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  room_id     BigInt
+  text        String   @db.Text
+  visitorId   String   @db.VarChar(100)
+}
