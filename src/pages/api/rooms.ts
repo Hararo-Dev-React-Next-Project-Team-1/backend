@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma"; // 싱글톤 패턴 적용
 import formidable, { Fields, Files } from "formidable";
 import fs from "fs";
 import path from "path";
@@ -9,8 +9,6 @@ export const config = {
     bodyParser: false,
   },
 };
-
-const prisma = new PrismaClient();
 
 const generateRoomCode = async (): Promise<number> => {
   let code: number;
