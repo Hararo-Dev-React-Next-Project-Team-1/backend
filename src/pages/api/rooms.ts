@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma"; // 싱글톤 패턴 적용
 import formidable, { Fields, Files } from "formidable";
 import fs from "fs";
 import path from "path";
@@ -9,8 +9,6 @@ export const config = {
     bodyParser: false,
   },
 };
-
-const prisma = new PrismaClient();
 
 const generateRoomCode = async (): Promise<number> => {
   let code: number;
@@ -38,7 +36,7 @@ const parseForm = (
   });
 };
 
-// ✅ 꼭 있어야 함!
+// 꼭 있어야 함!
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -62,6 +60,8 @@ export default async function handler(
       return res.status(400).json({ message: "파일은 필수입니다." });
 
     const fileBuffer = fs.readFileSync(uploadedFile.filepath);
+    fs.unlinkSync(uploadedFile.filepath); // 임시 파일 삭제
+
     const code = await generateRoomCode();
 
     const now = new Date().toLocaleString("sv-SE", {
@@ -74,7 +74,7 @@ export default async function handler(
         code,
         is_closed: false,
         file: fileBuffer,
-        created_at: now, // ✅ 문자열 그대로 넣기
+        created_at: now, // 문자열 그대로 넣기
       },
     });
 
