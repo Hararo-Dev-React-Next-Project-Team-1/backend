@@ -14,6 +14,8 @@ model Room {
   code       BigInt     @unique
   is_closed  Boolean    @default(false)
   file       Bytes?
+  file_type   String?
+  file_name   String?
   created_at String     @db.VarChar(25) // ✅ 여기 DateTime → String 으로 수정
   questions  Question[]
 }

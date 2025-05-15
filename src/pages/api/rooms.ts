@@ -59,6 +59,9 @@ export default async function handler(
     if (!uploadedFile)
       return res.status(400).json({ message: "파일은 필수입니다." });
 
+    const fileType = uploadedFile.mimetype || "application/octet-stream";
+    const originalFileName = uploadedFile.originalFilename || "unknown_file";
+
     const fileBuffer = fs.readFileSync(uploadedFile.filepath);
     fs.unlinkSync(uploadedFile.filepath); // 임시 파일 삭제
 
@@ -74,6 +77,8 @@ export default async function handler(
         code,
         is_closed: false,
         file: fileBuffer,
+        file_type: fileType,
+        file_name: originalFileName,
         created_at: now, // 문자열 그대로 넣기
       },
     });
