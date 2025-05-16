@@ -42,11 +42,14 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method === "GET") {
-    const rawEnterCode = req.headers['Enter-Code'];
+    const rawEnterCode = req.query['enter-code'];
 
     const parsedCode = Number(rawEnterCode);
     if (isNaN(parsedCode)) {
-      return res.status(400).json({ message: "헤더 값이 숫자가 아닙니다." });
+      return res.status(400).json({
+        message: "헤더 값이 숫자가 아닙니다.",
+        room_id: null
+      });
     }
 
     const enterCode = BigInt(parsedCode);
