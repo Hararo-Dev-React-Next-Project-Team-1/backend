@@ -61,12 +61,12 @@ export default async function handler(
     if(room){
       return res.status(200).json({
         message: "성공",
-        roomId: room.id.toString(),
+        room_id: room.id.toString(),
       });
     }else{
       return res.status(400).json({
         message: "방 없음",
-        roomId: null
+        room_id: null
       })
     }
   }
