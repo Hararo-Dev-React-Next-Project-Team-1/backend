@@ -42,7 +42,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method === "GET") {
-    const rawEnterCode = req.headers['enter-code'];
+    const rawEnterCode = req.headers['Enter-Code'];
 
     const parsedCode = Number(rawEnterCode);
     if (isNaN(parsedCode)) {
