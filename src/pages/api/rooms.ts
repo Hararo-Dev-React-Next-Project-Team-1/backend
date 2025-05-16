@@ -47,7 +47,7 @@ export default async function handler(
     const parsedCode = Number(rawEnterCode);
     if (isNaN(parsedCode)) {
       return res.status(400).json({
-        message: "헤더 값이 숫자가 아닙니다.",
+        message: "값이 숫자가 아닙니다.",
         room_id: null
       });
     }
