@@ -47,7 +47,7 @@ export default async function handler(
     const parsedCode = Number(rawEnterCode);
     if (isNaN(parsedCode)) {
       return res.status(400).json({
-        message: "값이 숫자가 아닙니다.",
+        message: "코드 값이 숫자가 아닙니다.",
         room_id: null
       });
     }
@@ -58,6 +58,12 @@ export default async function handler(
       where: { code: enterCode },
       select: {
         id: true,
+        title: true,
+        code: true,
+        file: true,
+        created_at: true,
+        file_name: true,
+        file_type: true
       },
     });
 
@@ -65,10 +71,16 @@ export default async function handler(
       return res.status(200).json({
         message: "성공",
         room_id: room.id.toString(),
+        title: room.title,
+        code: room.code.toString(),
+        file: room.file,
+        created_at: room.created_at.toString(),
+        file_name: room.file_name,
+        file_type: room.file_type
       });
     }else{
-      return res.status(400).json({
-        message: "방 없음",
+      return res.status(404).json({
+        message: "방이 존재하지 않습니다",
         room_id: null
       })
     }
