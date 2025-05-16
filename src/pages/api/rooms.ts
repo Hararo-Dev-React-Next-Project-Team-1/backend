@@ -41,6 +41,51 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (req.method === "GET") {
+    const rawEnterCode = req.query['enter-code'];
+
+    const parsedCode = Number(rawEnterCode);
+    if (isNaN(parsedCode)) {
+      return res.status(400).json({
+        message: "코드 값이 숫자가 아닙니다.",
+        room_id: null
+      });
+    }
+
+    const enterCode = BigInt(parsedCode);
+
+    const room = await prisma.room.findUnique({
+      where: { code: enterCode },
+      select: {
+        id: true,
+        title: true,
+        code: true,
+        file: true,
+        created_at: true,
+        file_name: true,
+        file_type: true
+      },
+    });
+
+    if(room){
+      return res.status(200).json({
+        message: "성공",
+        room_id: room.id.toString(),
+        title: room.title,
+        code: room.code.toString(),
+        file: room.file,
+        created_at: room.created_at.toString(),
+        file_name: room.file_name,
+        file_type: room.file_type
+      });
+    }else{
+      return res.status(404).json({
+        message: "방이 존재하지 않습니다",
+        room_id: null
+      })
+    }
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Method Not Allowed" });
   }
