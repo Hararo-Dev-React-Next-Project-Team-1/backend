@@ -1,8 +1,15 @@
+// src/api/rooms/[room_id]/questions/route.ts : 
+// [room_id] 방에 질문 생성(POST)
+// [room_id] 방의 질문 목록 조회(GET)
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma'; // 싱글톤 패턴 적용
 
 export async function POST(
+    // middleware.ts를 거쳐 전달받은 요청 객체
     req: NextRequest,
+    // 동적 라우팅 파라미터를 context.params로 넘겨줌
+    // ex) api/questions/1 이면 context.params.room_id 값은 "1"
     context: {params: {room_id: string}}
 ) {
     // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인
@@ -15,7 +22,9 @@ export async function POST(
         );
     }
 
-    const roomId = Number(context.params.room_id);
+    // Next.js 15+ 변경사항으로 context 객체안의 params 속성 접근하기 전에 await 해야함 
+    const awaitedParams = await context.params;
+    const roomId = Number(awaitedParams.room_id);
     if (isNaN(roomId)) {
         return NextResponse.json(
             { message: '숫자로 된 room_id를 입력해주세요'},
@@ -28,11 +37,13 @@ export async function POST(
 
         if (!room) {
             return NextResponse.json(
-                { message: `${roomId} 방을 찾을 수 없습니다.`},
+                { message: `방 #${roomId} 을 찾을 수 없습니다.`},
                 { status: 404 }
             );
         }
 
+        // 요청 body를 json으로 파싱
+        // ex) "text": "질문할 내용" 이면 const {text} : "질문할 내용"
         const {text} = await req.json();
 
         if (typeof text !== 'string' || !text.trim()) {
@@ -53,12 +64,12 @@ export async function POST(
 
         const responseBody = {
             message: '질문 생성 성공!',
-            room_id: newQuestion.room_id,
-            question_id: newQuestion.question_id,
+            room_id: newQuestion.room_id.toString(),
+            question_id: newQuestion.question_id.toString(),
             creator_id: newQuestion.creator_id,
             created_at: newQuestion.created_at,
             text: newQuestion.text,
-            likes: newQuestion.likes,
+            likes: newQuestion.likes.toString(),
             is_selected: newQuestion.is_selected
         }
 
