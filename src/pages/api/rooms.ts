@@ -36,15 +36,22 @@ const parseForm = (
   });
 };
 
-// 꼭 있어야 함!
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const visitorId = req.headers['visitor-id'];
+  if (!visitorId || Array.isArray(visitorId)) {
+    console.error('미들웨어에서 visitorId 헤더가 전달되지 않았습니다');
+    return res.status(500).json({
+      message: '내부 서버 오류: visitorId 식별 불가',
+    });
+  }
+
   if (req.method === 'GET') {
     const rawEnterCode = req.query['enter-code'];
-
     const parsedCode = Number(rawEnterCode);
+
     if (isNaN(parsedCode)) {
       return res.status(400).json({
         message: '코드 값이 숫자가 아닙니다.',
@@ -63,6 +70,7 @@ export default async function handler(
         created_at: true,
         file_name: true,
         file_type: true,
+        creator_id: true,
       },
     });
 
@@ -75,6 +83,7 @@ export default async function handler(
         created_at: room.created_at.toString(),
         file_name: room.file_name,
         file_type: room.file_type,
+        creator_id: room.creator_id,
       });
     } else {
       return res.status(404).json({
@@ -92,15 +101,18 @@ export default async function handler(
     const { fields, files } = await parseForm(req);
 
     const titleField = fields.title as string | string[] | undefined;
-
     const title = Array.isArray(titleField)
       ? titleField[0].toString().trim()
       : titleField?.toString().trim();
-    if (!title) return res.status(400).json({ message: '제목은 필수입니다.' });
+
+    if (!title) {
+      return res.status(400).json({ message: '제목은 필수입니다.' });
+    }
 
     const uploadedFile = Array.isArray(files.file) ? files.file[0] : files.file;
-    if (!uploadedFile)
+    if (!uploadedFile) {
       return res.status(400).json({ message: '파일은 필수입니다.' });
+    }
 
     const fileType = uploadedFile.mimetype || 'application/octet-stream';
     const originalFileName = uploadedFile.originalFilename || 'unknown_file';
@@ -112,7 +124,7 @@ export default async function handler(
 
     const now = new Date().toLocaleString('sv-SE', {
       timeZone: 'Asia/Seoul',
-    }); // e.g. "2025-05-14 17:52:01"
+    });
 
     const room = await prisma.room.create({
       data: {
@@ -122,13 +134,15 @@ export default async function handler(
         file: fileBuffer,
         file_type: fileType,
         file_name: originalFileName,
-        created_at: now, // 문자열 그대로 넣기
+        created_at: now,
+        creator_id: visitorId
       },
     });
 
     return res.status(201).json({
       room_id: Number(room.id),
       code: Number(room.code),
+      creator_id: room.creator_id,
     });
   } catch (error) {
     console.error('방 생성 실패:', error);
