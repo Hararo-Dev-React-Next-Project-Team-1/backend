@@ -13,7 +13,7 @@ export async function middleware(req: NextRequest) {
 
   const requestHeaders = new Headers(req.headers); //요청 헤더 복사(수정가능)
   requestHeaders.set('visitor-id', visitorId!); //visitor-id 헤더에 값 설정
-
+  
   // NextResponse.next()를 사용하여 라우트 핸들러로 req 객체 전달
   const res = NextResponse.next({
     request: new NextRequest(req.url, {
@@ -31,7 +31,7 @@ export async function middleware(req: NextRequest) {
       signal: req.signal,
     }),
   });
-
+  
   res.cookies.set('visitor_id', visitorId!, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
