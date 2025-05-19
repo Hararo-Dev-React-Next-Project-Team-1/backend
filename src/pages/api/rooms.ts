@@ -83,7 +83,7 @@ export default async function handler(
         created_at: room.created_at.toString(),
         file_name: room.file_name,
         file_type: room.file_type,
-        visitorId: room.creator_id,
+        creator_id: room.creator_id,
       });
     } else {
       return res.status(404).json({
@@ -142,7 +142,7 @@ export default async function handler(
     return res.status(201).json({
       room_id: Number(room.id),
       code: Number(room.code),
-      visitorId: room.creator_id,
+      creator_id: room.creator_id,
     });
   } catch (error) {
     console.error('방 생성 실패:', error);
