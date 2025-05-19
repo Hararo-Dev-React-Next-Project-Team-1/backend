@@ -5,7 +5,7 @@ export async function POST(
     req: NextRequest,
     context: {params: {room_id: string}}
 ) {
-    // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인인
+    // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인
     const visitorId = req.headers.get('visitor-id');
     if (visitorId === null || visitorId === undefined) {
         console.error('미들웨어에서 visitorId 헤더가 전달되지 않았습니다');
@@ -14,29 +14,26 @@ export async function POST(
             { status: 500 }
         );
     }
-    try {
-        const awaitedParams = await context.params;
-        const roomId = Number(awaitedParams.room_id);
-        if (isNaN(roomId)) {
-            return NextResponse.json(
-                { message: '숫자로 된 room_id를 입력해주세요'},
-                { status: 400 }
-            );
-        }
 
-        const room = await prisma.room.findUnique({
-            where: {id: roomId}
-        });
+    const roomId = Number(context.params.room_id);
+    if (isNaN(roomId)) {
+        return NextResponse.json(
+            { message: '숫자로 된 room_id를 입력해주세요'},
+            { status: 400 }
+        );
+    }
+
+    try {
+        const room = await prisma.room.findUnique({ where: {id: roomId} });
 
         if (!room) {
             return NextResponse.json(
-                { message: `${awaitedParams.room_id} 방을 찾을 수 없습니다.`},
+                { message: `${roomId} 방을 찾을 수 없습니다.`},
                 { status: 404 }
             );
         }
 
-        const requestBody = await req.json();
-        const {text} = requestBody;
+        const {text} = await req.json();
 
         if (typeof text !== 'string' || !text.trim()) {
             return NextResponse.json(
@@ -49,22 +46,19 @@ export async function POST(
             data: {
                 room_id: room.id,
                 creator_id: visitorId,
-                created_at: new Date().toLocaleString('sv-SE', {
-                    timeZone: 'Asia/Seoul',
-                  }),
+                created_at: new Date().toLocaleString('sv-SE', {timeZone: 'Asia/Seoul',}),
                 text: text.trim(),
-
-            },
+            }
         });
 
         const responseBody = {
-            messagae: '질문 생성 성공!',
-            room_id: newQuestion.room_id.toString(),
-            quesiton_id: newQuestion.question_id.toString(),
+            message: '질문 생성 성공!',
+            room_id: newQuestion.room_id,
+            question_id: newQuestion.question_id,
             creator_id: newQuestion.creator_id,
             created_at: newQuestion.created_at,
             text: newQuestion.text,
-            likes: newQuestion.likes.toString(),
+            likes: newQuestion.likes,
             is_selected: newQuestion.is_selected
         }
 
