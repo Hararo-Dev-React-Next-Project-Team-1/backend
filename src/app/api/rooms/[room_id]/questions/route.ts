@@ -129,27 +129,34 @@ export async function GET(
             where: { id: roomId },
             include: { questions: true }
         });
+
+        if (!allQuestionsInThisRoom) {
+            return NextResponse.json(
+                { message: `방 # ${roomId} 의 질문 목록 조회 실패!`},
+                { status: 400 }
+            );
+        }
     
-    //질문들을 map에 담아서 가져옴
-    const questionsMap = allQuestionsInThisRoom.questions.map(question => ({
-        room_id: question.room_id.toString(),
-        question_id: question.question_id.toString(),
-        creator_id: question.creator_id,
-        created_at: question.created_at,
-        text: question.text,
-        likes: question.likes.toString(),
-        is_answered: question.is_answered,
-    }));
-    
-    //편의를 위해 질문 몇개인지 같이 보냄
-    const questionsCount = questionsMap.length;
-    //질문이 0개면 404 return
-    if (!questionsCount) {
-        return NextResponse.json(
-            { message: `방 #${roomId} 에 생성된 질문이 없습니다.`},
-            { status: 404 }
-        );
-    }
+        //질문들을 map에 담아서 가져옴
+        const questionsMap = allQuestionsInThisRoom.questions.map(question => ({
+            room_id: question.room_id.toString(),
+            question_id: question.question_id.toString(),
+            creator_id: question.creator_id,
+            created_at: question.created_at,
+            text: question.text,
+            likes: question.likes.toString(),
+            is_answered: question.is_answered,
+        }));
+        
+        //편의를 위해 질문 몇개인지 같이 보냄
+        const questionsCount = questionsMap.length;
+        //질문이 0개면 404 return
+        if (!questionsCount) {
+            return NextResponse.json(
+                { message: `방 #${roomId} 에 생성된 질문이 없습니다.`},
+                { status: 404 }
+            );
+        }
 
         const responseBody = {
             message: `방 #${roomId} 의 전체 질문 목록 조회 성공!`,
