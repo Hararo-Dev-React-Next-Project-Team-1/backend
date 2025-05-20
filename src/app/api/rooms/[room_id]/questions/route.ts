@@ -124,10 +124,15 @@ export async function GET(
         }
 
         // [room_id]로 받아온 roomId를 id로 갖고있는 room과 
-        // include 옵션으로 가져온 관계 데이터(관계 필드이름:questions)를 가져옴
         const allQuestionsInThisRoom = await prisma.room.findUnique({
             where: { id: roomId },
-            include: { questions: true }
+            // include 옵션으로 가져온 관계 데이터(관계 필드이름:questions)를 가져옴
+            include: { 
+                questions: {
+                    // 이 중에서 is_answered 속성이 false 인 질문들만 가져옴
+                    where: { is_answered: false }
+                }
+            }
         });
 
         if (!allQuestionsInThisRoom) {
