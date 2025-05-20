@@ -36,7 +36,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponseServerI
 
       // 새로운 질문 broadcast
       socket.on("sendQuestion", ({ roomSocketId, content }) => {
-        console.log(`📨 질문 도착 - 방: ${roomSocketId}, 내용: ${content}`);
+        // console.log(`📨 질문 도착 - 방: ${roomSocketId}, 내용: ${content}`);
+        console.log(`📨 질문 도착 - 방: ${roomSocketId}, 내용: ${JSON.stringify(content)}`);
         io.to(roomSocketId).emit("receiveQuestion", content);
       });
 
