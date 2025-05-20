@@ -71,6 +71,7 @@ export default async function handler(
         file_name: true,
         file_type: true,
         creator_id: true,
+        is_closed: true,
       },
     });
 
@@ -84,6 +85,8 @@ export default async function handler(
         file_name: room.file_name,
         file_type: room.file_type,
         creator_id: room.creator_id,
+        is_closed: room.is_closed,
+        visitor_id: visitorId,
       });
     } else {
       return res.status(404).json({
