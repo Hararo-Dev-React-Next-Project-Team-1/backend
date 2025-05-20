@@ -70,7 +70,7 @@ export async function POST(
             created_at: newQuestion.created_at,
             text: newQuestion.text,
             likes: newQuestion.likes.toString(),
-            is_selected: newQuestion.is_selected
+            is_answered: newQuestion.is_answered
         }
 
         return NextResponse.json(
@@ -138,7 +138,7 @@ export async function GET(
         created_at: question.created_at,
         text: question.text,
         likes: question.likes.toString(),
-        is_selected: question.is_selected,
+        is_answered: question.is_answered,
     }));
     
     //편의를 위해 질문 몇개인지 같이 보냄
