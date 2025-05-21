@@ -7,9 +7,6 @@
 -- DropForeignKey
 ALTER TABLE `question` DROP FOREIGN KEY `Question_room_id_fkey`;
 
--- AlterTable
-ALTER TABLE `Room` ADD COLUMN `creator_id` VARCHAR(191) NULL;
-
 -- DropTable
 DROP TABLE `question`;
 
@@ -21,7 +18,7 @@ CREATE TABLE `Question` (
     `created_at` VARCHAR(25) NOT NULL,
     `text` TEXT NOT NULL,
     `likes` BIGINT NOT NULL DEFAULT 0,
-    `is_selected` BOOLEAN NOT NULL DEFAULT false,
+    `is_answered` BOOLEAN NOT NULL DEFAULT false,
 
     PRIMARY KEY (`question_id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
