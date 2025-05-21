@@ -70,7 +70,7 @@ export async function POST(
             created_at: newQuestion.created_at,
             text: newQuestion.text,
             likes: newQuestion.likes.toString(),
-            is_selected: newQuestion.is_selected
+            is_answered: newQuestion.is_answered
         }
 
         return NextResponse.json(
@@ -124,32 +124,44 @@ export async function GET(
         }
 
         // [room_id]로 받아온 roomId를 id로 갖고있는 room과 
-        // include 옵션으로 가져온 관계 데이터(관계 필드이름:questions)를 가져옴
         const allQuestionsInThisRoom = await prisma.room.findUnique({
             where: { id: roomId },
-            include: { questions: true }
+            // include 옵션으로 가져온 관계 데이터(관계 필드이름:questions)를 가져옴
+            include: { 
+                questions: {
+                    // 이 중에서 is_answered 속성이 false 인 질문들만 가져옴
+                    where: { is_answered: false }
+                }
+            }
         });
+
+        if (!allQuestionsInThisRoom) {
+            return NextResponse.json(
+                { message: `방 # ${roomId} 의 질문 목록 조회 실패!`},
+                { status: 400 }
+            );
+        }
     
-    //질문들을 map에 담아서 가져옴
-    const questionsMap = allQuestionsInThisRoom.questions.map(question => ({
-        room_id: question.room_id.toString(),
-        question_id: question.question_id.toString(),
-        creator_id: question.creator_id,
-        created_at: question.created_at,
-        text: question.text,
-        likes: question.likes.toString(),
-        is_selected: question.is_selected,
-    }));
-    
-    //편의를 위해 질문 몇개인지 같이 보냄
-    const questionsCount = questionsMap.length;
-    //질문이 0개면 404 return
-    if (!questionsCount) {
-        return NextResponse.json(
-            { message: `방 #${roomId} 에 생성된 질문이 없습니다.`},
-            { status: 404 }
-        );
-    }
+        //질문들을 map에 담아서 가져옴
+        const questionsMap = allQuestionsInThisRoom.questions.map(question => ({
+            room_id: question.room_id.toString(),
+            question_id: question.question_id.toString(),
+            creator_id: question.creator_id,
+            created_at: question.created_at,
+            text: question.text,
+            likes: question.likes.toString(),
+            is_answered: question.is_answered,
+        }));
+        
+        //편의를 위해 질문 몇개인지 같이 보냄
+        const questionsCount = questionsMap.length;
+        //질문이 0개면 404 return
+        if (!questionsCount) {
+            return NextResponse.json(
+                { message: `방 #${roomId} 에 생성된 질문이 없습니다.`},
+                { status: 404 }
+            );
+        }
 
         const responseBody = {
             message: `방 #${roomId} 의 전체 질문 목록 조회 성공!`,

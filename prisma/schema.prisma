@@ -29,5 +29,5 @@ model Question {
   created_at  String   @db.VarChar(25) // ✅ 여기 DateTime → String 으로 수정
   text        String   @db.Text
   likes       BigInt   @default(0)
-  is_selected Boolean  @default(false)
+  is_answered Boolean  @default(false)
 }
