@@ -95,7 +95,7 @@ export async function PATCH(
             created_at: updatedQuestion.created_at,
             text: updatedQuestion.text,
             likes: updatedQuestion.likes.toString(),
-            is_selected: updatedQuestion.is_selected
+            is_answered: updatedQuestion.is_answered
         }
 
         // 질문 수정 시
@@ -203,7 +203,7 @@ export async function DELETE(
             created_at: deletedQuestion.created_at,
             text: deletedQuestion.text,
             likes: deletedQuestion.likes.toString(),
-            is_selected: deletedQuestion.is_selected,
+            is_answered: deletedQuestion.is_answered,
         }
 
         // 질문 삭제 시
