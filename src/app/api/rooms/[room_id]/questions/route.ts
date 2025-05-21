@@ -2,6 +2,7 @@
 // [room_id] 방에 질문 생성(POST)
 // [room_id] 방의 질문 목록 조회(GET)
 
+import { getIO } from '@/lib/socketInstance'; // // 전역 socket 인스턴스
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma'; // 싱글톤 패턴 적용
 
@@ -10,14 +11,14 @@ export async function POST(
     req: NextRequest,
     // 동적 라우팅 파라미터를 context.params로 넘겨줌
     // ex) api/questions/1 이면 context.params.room_id 값은 "1"
-    context: {params: {room_id: string}}
+    context: { params: { room_id: string } }
 ) {
     // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인
     const visitorId = req.headers.get('visitor-id');
     if (visitorId === null || visitorId === undefined) {
         console.error('미들웨어에서 visitorId 헤더가 전달되지 않았습니다');
         return NextResponse.json(
-            { message: '내부 서버 오류: visitorId 식별 불가'},
+            { message: '내부 서버 오류: visitorId 식별 불가' },
             { status: 500 }
         );
     }
@@ -27,24 +28,24 @@ export async function POST(
     const roomId = Number(awaitedParams.room_id);
     if (isNaN(roomId)) {
         return NextResponse.json(
-            { message: '숫자로 된 room_id를 입력해주세요'},
+            { message: '숫자로 된 room_id를 입력해주세요' },
             { status: 400 }
         );
     }
 
     try {
-        const room = await prisma.room.findUnique({ where: {id: roomId} });
+        const room = await prisma.room.findUnique({ where: { id: roomId } });
 
         if (!room) {
             return NextResponse.json(
-                { message: `방 #${roomId} 을 찾을 수 없습니다.`},
+                { message: `방 #${roomId} 을 찾을 수 없습니다.` },
                 { status: 404 }
             );
         }
 
         // 요청 body를 json으로 파싱
         // ex) "text": "질문할 내용" 이면 const {text} : "질문할 내용"
-        const {text} = await req.json();
+        const { text } = await req.json();
 
         if (typeof text !== 'string' || !text.trim()) {
             return NextResponse.json(
@@ -57,7 +58,7 @@ export async function POST(
             data: {
                 room_id: room.id,
                 creator_id: visitorId,
-                created_at: new Date().toLocaleString('sv-SE', {timeZone: 'Asia/Seoul',}),
+                created_at: new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul', }),
                 text: text.trim(),
             }
         });
@@ -71,6 +72,14 @@ export async function POST(
             text: newQuestion.text,
             likes: newQuestion.likes.toString(),
             is_selected: newQuestion.is_selected
+        }
+
+        // 소켓 브로드캐스트 추가
+        const io = getIO();
+        if (io) {
+            io.to(`room_${roomId}`).emit('receiveQuestion', responseBody);
+        } else {
+            console.warn('❗ Socket.IO 인스턴스가 없음');
         }
 
         return NextResponse.json(
@@ -91,14 +100,14 @@ export async function GET(
     req: NextRequest,
     // 동적 라우팅 파라미터를 context.params로 넘겨줌
     // ex) api/questions/1 이면 context.params.room_id 값은 "1"
-    context: {params: {room_id: string}}
+    context: { params: { room_id: string } }
 ) {
     // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인
     const visitorId = req.headers.get('visitor-id');
     if (visitorId === null || visitorId === undefined) {
         console.error('미들웨어에서 visitorId 헤더가 전달되지 않았습니다');
         return NextResponse.json(
-            { message: '내부 서버 오류: visitorId 식별 불가'},
+            { message: '내부 서버 오류: visitorId 식별 불가' },
             { status: 500 }
         );
     }
@@ -108,17 +117,17 @@ export async function GET(
     const roomId = Number(awaitedParams.room_id);
     if (isNaN(roomId)) {
         return NextResponse.json(
-            { message: '숫자로 된 room_id를 입력해주세요'},
+            { message: '숫자로 된 room_id를 입력해주세요' },
             { status: 400 }
         );
     }
 
     try {
-        const room = await prisma.room.findUnique({ where: {id: roomId} });
+        const room = await prisma.room.findUnique({ where: { id: roomId } });
 
         if (!room) {
             return NextResponse.json(
-                { message: `방 #${roomId} 을 찾을 수 없습니다.`},
+                { message: `방 #${roomId} 을 찾을 수 없습니다.` },
                 { status: 404 }
             );
         }
@@ -129,27 +138,27 @@ export async function GET(
             where: { id: roomId },
             include: { questions: true }
         });
-    
-    //질문들을 map에 담아서 가져옴
-    const questionsMap = allQuestionsInThisRoom.questions.map(question => ({
-        room_id: question.room_id.toString(),
-        question_id: question.question_id.toString(),
-        creator_id: question.creator_id,
-        created_at: question.created_at,
-        text: question.text,
-        likes: question.likes.toString(),
-        is_selected: question.is_selected,
-    }));
-    
-    //편의를 위해 질문 몇개인지 같이 보냄
-    const questionsCount = questionsMap.length;
-    //질문이 0개면 404 return
-    if (!questionsCount) {
-        return NextResponse.json(
-            { message: `방 #${roomId} 에 생성된 질문이 없습니다.`},
-            { status: 404 }
-        );
-    }
+
+        //질문들을 map에 담아서 가져옴
+        const questionsMap = allQuestionsInThisRoom.questions.map(question => ({
+            room_id: question.room_id.toString(),
+            question_id: question.question_id.toString(),
+            creator_id: question.creator_id,
+            created_at: question.created_at,
+            text: question.text,
+            likes: question.likes.toString(),
+            is_selected: question.is_selected,
+        }));
+
+        //편의를 위해 질문 몇개인지 같이 보냄
+        const questionsCount = questionsMap.length;
+        //질문이 0개면 404 return
+        if (!questionsCount) {
+            return NextResponse.json(
+                { message: `방 #${roomId} 에 생성된 질문이 없습니다.` },
+                { status: 404 }
+            );
+        }
 
         const responseBody = {
             message: `방 #${roomId} 의 전체 질문 목록 조회 성공!`,
