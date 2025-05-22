@@ -68,13 +68,6 @@ export async function GET(
         
         //편의를 위해 질문 몇개인지 같이 보냄
         const questionsCount = questionsMap.length;
-        //질문이 0개면 404 return
-        if (!questionsCount) {
-            return NextResponse.json(
-                { message: `방 #${roomId} 에 생성된 질문이 없습니다.`},
-                { status: 404 }
-            );
-        }
 
         const responseBody = {
             message: `방 #${roomId} 의 전체 질문 목록 조회 성공!`,
