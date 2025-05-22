@@ -2,6 +2,7 @@
 // [room_id] 방의 [question_id] 질문 수정(PATCH)
 // [room_id] 방의 [question_id] 질문 삭제(DELETE)
 
+import { getIO } from '@/lib/socketInstance'; // // 전역 socket 인스턴스
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma'; // 싱글톤 패턴 적용
 
@@ -11,14 +12,14 @@ export async function PATCH(
     // 동적 라우팅 파라미터를 context.params로 넘겨줌
     // ex) /api/rooms/1/questions/11 이면
     // context.params.room_id : "1", context.params.question_id : "11"
-    context: {params: { room_id: string, question_id: string}}
+    context: { params: { room_id: string, question_id: string } }
 ) {
     // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인
     const visitorId = req.headers.get('visitor-id');
     if (visitorId === null || visitorId === undefined) {
         console.error('미들웨어에서 visitorId 헤더가 전달되지 않았습니다');
         return NextResponse.json(
-            { message: '내부 서버 오류: visitorId 식별 불가'},
+            { message: '내부 서버 오류: visitorId 식별 불가' },
             { status: 500 }
         );
     }
@@ -42,14 +43,14 @@ export async function PATCH(
     }
 
     try {
-        const room = await prisma.room.findUnique({ where: {id: roomId} });
+        const room = await prisma.room.findUnique({ where: { id: roomId } });
         if (!room) {
             return NextResponse.json(
-                { message: `방 #${roomId} 을 찾을 수 없습니다.`},
+                { message: `방 #${roomId} 을 찾을 수 없습니다.` },
                 { status: 404 }
             );
         }
-        
+
         const question = await prisma.question.findUnique({
             where: {
                 room_id: roomId,
@@ -58,7 +59,7 @@ export async function PATCH(
         });
         if (!question) {
             return NextResponse.json(
-                { message: `방 #${roomId} 에서 질문 #${questionId} 을 찾을 수 없습니다.`},
+                { message: `방 #${roomId} 에서 질문 #${questionId} 을 찾을 수 없습니다.` },
                 { status: 404 }
             );
         }
@@ -72,7 +73,7 @@ export async function PATCH(
 
         // 요청 body를 json으로 파싱
         // ex) "text": "수정할 내용" 이면 const {text} : "수정할 내용"
-        const {text} = await req.json();
+        const { text } = await req.json();
 
         if (typeof text !== 'string' || !text.trim()) {
             return NextResponse.json(
@@ -97,6 +98,20 @@ export async function PATCH(
             is_answered: updatedQuestion.is_answered
         }
 
+        // 질문 수정 시
+        const io = getIO();
+        if (io) {
+            const sanitized = JSON.parse(
+              JSON.stringify(updatedQuestion, (_key, value) =>
+                typeof value === "bigint" ? value.toString() : value
+              )
+            );
+          
+            io.to(`room_${roomId}`).emit("updateQuestion", {
+              question: sanitized,
+            });
+          }
+
         return NextResponse.json(
             responseBody,
             { status: 200 },
@@ -117,14 +132,14 @@ export async function DELETE(
     // 동적 라우팅 파라미터를 context.params로 넘겨줌
     // ex) /api/rooms/1/questions/11 이면
     // context.params.room_id : "1", context.params.question_id : "11"
-    context: {params: { room_id: string, question_id: string}}
+    context: { params: { room_id: string, question_id: string } }
 ) {
     // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인
     const visitorId = req.headers.get('visitor-id');
     if (visitorId === null || visitorId === undefined) {
         console.error('미들웨어에서 visitorId 헤더가 전달되지 않았습니다');
         return NextResponse.json(
-            { message: '내부 서버 오류: visitorId 식별 불가'},
+            { message: '내부 서버 오류: visitorId 식별 불가' },
             { status: 500 }
         );
     }
@@ -148,14 +163,14 @@ export async function DELETE(
     }
 
     try {
-        const room = await prisma.room.findUnique({ where: {id: roomId} });
+        const room = await prisma.room.findUnique({ where: { id: roomId } });
         if (!room) {
             return NextResponse.json(
-                { message: `방 #${roomId} 을 찾을 수 없습니다.`},
+                { message: `방 #${roomId} 을 찾을 수 없습니다.` },
                 { status: 404 }
             );
         }
-        
+
         const question = await prisma.question.findUnique({
             where: {
                 room_id: roomId,
@@ -164,7 +179,7 @@ export async function DELETE(
         });
         if (!question) {
             return NextResponse.json(
-                { message: `방 #${roomId} 에서 질문 #${questionId} 을 찾을 수 없습니다.`},
+                { message: `방 #${roomId} 에서 질문 #${questionId} 을 찾을 수 없습니다.` },
                 { status: 404 }
             );
         }
@@ -190,6 +205,14 @@ export async function DELETE(
             likes: deletedQuestion.likes.toString(),
             is_answered: deletedQuestion.is_answered,
         }
+
+        // 질문 삭제 시
+        const io = getIO();
+        if (io) {
+            // 서버
+            io.to(`room_${roomId}`).emit('deleteQuestion', { question_id: questionId });
+        }
+
 
         return NextResponse.json(
             responseBody,

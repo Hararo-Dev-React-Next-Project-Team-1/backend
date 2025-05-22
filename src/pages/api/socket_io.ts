@@ -4,9 +4,13 @@ import { Server } from 'socket.io'
 import { NextApiRequest } from 'next'
 import { NextApiResponseServerIO } from '../../types/next'
 
+// import { Server as IOServer } from 'socket.io';
+import { setIO } from '@/lib/socketInstance';
+
+
 export default function handler(req: NextApiRequest, res: NextApiResponseServerIO) {
   if (!res.socket.server.io) {
-    console.log('Socket.IO 서버 초기화')
+    console.log('✅ Socket.IO 서버 초기화')
 
     const io = new Server(res.socket.server, {
       path: "/api/socket_io",
@@ -17,6 +21,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponseServerI
       },
     });
 
+    setIO(io);
     res.socket.server.io = io
 
     io.on('connection', (socket) => {
@@ -33,13 +38,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponseServerI
         socket.leave(roomSocketId);
         console.log(`🚪 ${socket.id}가 방 ${roomSocketId}에서 나감`);
       });
-
-      // 새로운 질문 broadcast
-      socket.on("sendQuestion", ({ roomSocketId, content }) => {
-        // console.log(`📨 질문 도착 - 방: ${roomSocketId}, 내용: ${content}`);
-        console.log(`📨 질문 도착 - 방: ${roomSocketId}, 내용: ${JSON.stringify(content)}`);
-        io.to(roomSocketId).emit("receiveQuestion", content);
-      });
+      
+      // 좋아요 변동
+      socket.on('updateLikes', ({ roomId, questionId, likes }) => {
+        // 같은 방 사용자에게 좋아요 수 전송
+        io.to(roomId).emit('updateLikes', { questionId, likes });
+      });      
 
       // 방 삭제 (강연자)
       socket.on("closeRoom", ({ roomSocketId }) => {
@@ -47,9 +51,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponseServerI
         io.to(roomSocketId).emit("roomClosed");
       });
 
-      socket.on("disconnect", (reason) => {
-        console.log("❌ 연결 종료:", socket.id, "원인:", reason);
-      });
     })
   }
   res.end()
