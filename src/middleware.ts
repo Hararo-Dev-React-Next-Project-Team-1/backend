@@ -57,7 +57,7 @@ export async function middleware(req: NextRequest) {
     
     
     // 허용할 메서드 설정 (실제 API 라우트에서 사용하는 메서드들 포함)
-    res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     // 허용할 요청 헤더 설정 (프론트엔드에서 보낼 수 있는 헤더들 포함)
     res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     // 자격 증명 (쿠키 등) 포함 요청 허용
