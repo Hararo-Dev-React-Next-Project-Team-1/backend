@@ -1,3 +1,7 @@
+// src/app/api/rooms/[room_id]/route.ts
+// room_id 방의 파일 다운로드 (GET)
+// room_id 방 닫힘 (DELETE)
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma"; // 싱글톤 패턴으로 prisma 클라이언트 가져오기
 
