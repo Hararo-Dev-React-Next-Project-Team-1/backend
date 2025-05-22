@@ -3,7 +3,6 @@
 import { Server } from 'socket.io'
 import { NextApiRequest } from 'next'
 import { NextApiResponseServerIO } from '../../types/next'
-import { prisma } from '@/lib/prisma';
 
 // import { Server as IOServer } from 'socket.io';
 import { setIO } from '@/lib/socketInstance';
@@ -39,34 +38,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponseServerI
         socket.leave(roomSocketId);
         console.log(`🚪 ${socket.id}가 방 ${roomSocketId}에서 나감`);
       });
-
-      // 새로운 질문 broadcast
-      socket.on('sendQuestion', async ({ roomId }) => {
-        try {
-          // 최신 질문 하나만 가져오기
-          const latest = await prisma.question.findFirst({
-            where: { room_id: Number(roomId) },
-            orderBy: { created_at: 'desc' },
-          });
-
-          if (!latest) return; // 질문이 하나도 없으면 그냥 종료
-
-          const responseBody = {
-            room_id: latest.room_id.toString(),
-            question_id: latest.question_id.toString(),
-            creator_id: latest.creator_id,
-            created_at: latest.created_at,
-            text: latest.text,
-            likes: latest.likes.toString(),
-            is_selected: latest.is_selected,
-          };
-
-          // 같은 방(roomId)에 들어와 있는 모든 사용자에게 이벤트로 질문을 전송
-          io.to(roomId).emit('receiveQuestion', responseBody);
-        } catch (e) {
-          console.error('❌ 소켓 broadcast 실패:', e);
-        }
-      });
+      
+      // 좋아요 변동
+      socket.on('updateLikes', ({ roomId, questionId, likes }) => {
+        // 같은 방 사용자에게 좋아요 수 전송
+        io.to(roomId).emit('updateLikes', { questionId, likes });
+      });      
 
       // 방 삭제 (강연자)
       socket.on("closeRoom", ({ roomSocketId }) => {

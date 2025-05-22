@@ -2,7 +2,7 @@
 // [room_id] 방에 질문 생성(POST)
 // [room_id] 방의 질문 목록 조회(GET)
 
-import { getIO } from '@/lib/socketInstance'; // // 전역 socket 인스턴스
+import { getIO } from '@/lib/socketInstance'; // 전역 socket 인스턴스
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma'; // 싱글톤 패턴 적용
 
@@ -74,6 +74,11 @@ export async function POST(
             is_answered: newQuestion.is_answered
         }
 
+        const io = getIO();
+        if (io) {
+            io.to(`room_${roomId}`).emit('receiveQuestion', responseBody);
+        }
+
         return NextResponse.json(
             responseBody,
             { status: 201 },
@@ -128,7 +133,7 @@ export async function GET(
         const allQuestionsInThisRoom = await prisma.room.findUnique({
             where: { id: roomId },
             // include 옵션으로 가져온 관계 데이터(관계 필드이름:questions)를 가져옴
-            include: { 
+            include: {
                 questions: {
                     // 이 중에서 is_answered 속성이 false 인 질문들만 가져옴
                     where: { is_answered: false }
@@ -138,11 +143,11 @@ export async function GET(
 
         if (!allQuestionsInThisRoom) {
             return NextResponse.json(
-                { message: `방 # ${roomId} 의 질문 목록 조회 실패!`},
+                { message: `방 # ${roomId} 의 질문 목록 조회 실패!` },
                 { status: 400 }
             );
         }
-    
+
         //질문들을 map에 담아서 가져옴
         const questionsMap = allQuestionsInThisRoom.questions.map(question => ({
             room_id: question.room_id.toString(),
@@ -153,13 +158,13 @@ export async function GET(
             likes: question.likes.toString(),
             is_answered: question.is_answered,
         }));
-        
+
         //편의를 위해 질문 몇개인지 같이 보냄
         const questionsCount = questionsMap.length;
         //질문이 0개면 404 return
         if (!questionsCount) {
             return NextResponse.json(
-                { message: `방 #${roomId} 에 생성된 질문이 없습니다.`},
+                { message: `방 #${roomId} 에 생성된 질문이 없습니다.` },
                 { status: 404 }
             );
         }
