@@ -1,3 +1,8 @@
+// src/pages/api/rooms.ts
+
+// 방 생성 (POST)
+// 방 입장 (GET)
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma'; // 싱글톤 패턴 적용
 import formidable, { Fields, Files } from 'formidable';
@@ -48,6 +53,7 @@ export default async function handler(
     });
   }
 
+  // 방 입장
   if (req.method === 'GET') {
     const rawEnterCode = req.query['enter-code'];
     const parsedCode = Number(rawEnterCode);
@@ -75,9 +81,24 @@ export default async function handler(
       },
     });
 
+    if (room && room.is_closed) {
+      return res.status(409).json({
+        message: `방 #${room.id.toString()} 은 닫혀있습니다!`,
+        room_Id: room.id.toString(),
+        title: room.title,
+        code: room.code.toString(),
+        created_at: room.created_at,
+        file_name: room.file_name,
+        file_type: room.file_type,
+        creator_id: room.creator_id,
+        is_closed: room.is_closed,
+        visitor_id: visitorId
+      })
+    }
+
     if (room) {
       return res.status(200).json({
-        message: '성공',
+        message: `방 #${room.id.toString()} 에 입장 성공!`,
         room_id: room.id.toString(),
         title: room.title,
         code: room.code.toString(),
@@ -96,6 +117,7 @@ export default async function handler(
     }
   }
 
+  // 방 생성
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
@@ -143,8 +165,10 @@ export default async function handler(
     });
 
     return res.status(201).json({
+      message: `방 #${room.id} 생성 성공!`,
       room_id: Number(room.id),
       code: Number(room.code),
+      title: room.title,
       creator_id: room.creator_id,
     });
   } catch (error) {
