@@ -181,7 +181,7 @@ export async function PATCH(
     } catch (error) {
         console.error('질문 선택 중 오류:', error);
         return NextResponse.json(
-            { message: '질문 선택택 중 서버 오류 발생' },
+            { message: '질문 선택 중 서버 오류 발생' },
             { status: 500 }
         );
     }
