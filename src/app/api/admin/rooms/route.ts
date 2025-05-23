@@ -43,9 +43,9 @@ export async function GET(
             { status: 200 },
         );
     } catch (error) {
-        console.error('질문 생성 중 오류:', error);
+        console.error('방 목록 조회 중 오류:', error);
         return NextResponse.json(
-            { message: '질문 생성 중 서버 오류 발생' },
+            { message: '방 목록 조회회 중 서버 오류 발생' },
             { status: 500 }
         );
     }

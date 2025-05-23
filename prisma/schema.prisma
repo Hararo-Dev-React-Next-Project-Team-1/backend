@@ -30,4 +30,5 @@ model Question {
   text        String   @db.Text
   likes       BigInt   @default(0)
   is_answered Boolean  @default(false)
+  is_selected Boolean  @default(false)
 }
