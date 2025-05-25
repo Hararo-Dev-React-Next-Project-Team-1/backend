@@ -2,7 +2,7 @@
 // 관리자 시점 room_id 방의 전체 질문(답변완료 포함) 조회 (GET)
 // room_id 방의 특정 질문(question_id) is_selected 상태 변경 (PATCH)
 
-
+import { getIO } from '@/lib/socketInstance'; // 전역 socket 인스턴스
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma'; // 싱글톤 패턴 적용
 
@@ -11,14 +11,14 @@ export async function GET(
     req: NextRequest,
     // 동적 라우팅 파라미터를 context.params로 넘겨줌
     // ex) api/questions/1 이면 context.params.room_id 값은 "1"
-    context: {params: {room_id: string}}
+    context: { params: { room_id: string } }
 ) {
     // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인
     const visitorId = req.headers.get('visitor-id');
     if (visitorId === null || visitorId === undefined) {
         console.error('미들웨어에서 visitorId 헤더가 전달되지 않았습니다');
         return NextResponse.json(
-            { message: '내부 서버 오류: visitorId 식별 불가'},
+            { message: '내부 서버 오류: visitorId 식별 불가' },
             { status: 500 }
         );
     }
@@ -28,17 +28,17 @@ export async function GET(
     const roomId = Number(awaitedParams.room_id);
     if (isNaN(roomId)) {
         return NextResponse.json(
-            { message: '숫자로 된 room_id를 입력해주세요'},
+            { message: '숫자로 된 room_id를 입력해주세요' },
             { status: 400 }
         );
     }
 
     try {
-        const room = await prisma.room.findUnique({ where: {id: roomId} });
+        const room = await prisma.room.findUnique({ where: { id: roomId } });
 
         if (!room) {
             return NextResponse.json(
-                { message: `방 #${roomId} 을 찾을 수 없습니다.`},
+                { message: `방 #${roomId} 을 찾을 수 없습니다.` },
                 { status: 404 }
             );
         }
@@ -52,11 +52,11 @@ export async function GET(
 
         if (!allQuestionsInThisRoom) {
             return NextResponse.json(
-                { message: `방 # ${roomId} 의 질문 목록 조회 실패!`},
+                { message: `방 # ${roomId} 의 질문 목록 조회 실패!` },
                 { status: 400 }
             );
         }
-    
+
         //질문들을 map에 담아서 가져옴
         const questionsMap = allQuestionsInThisRoom.questions.map(question => ({
             room_id: question.room_id.toString(),
@@ -67,7 +67,7 @@ export async function GET(
             likes: question.likes.toString(),
             is_answered: question.is_answered,
         }));
-        
+
         //편의를 위해 질문 몇개인지 같이 보냄
         const questionsCount = questionsMap.length;
 
@@ -97,14 +97,14 @@ export async function PATCH(
     // 동적 라우팅 파라미터를 context.params로 넘겨줌
     // ex) /api/rooms/1/questions/11 이면
     // context.params.room_id : "1"
-    context: {params: { room_id: string }}
+    context: { params: { room_id: string } }
 ) {
     // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인
     const visitorId = req.headers.get('visitor-id');
     if (visitorId === null || visitorId === undefined) {
         console.error('미들웨어에서 visitorId 헤더가 전달되지 않았습니다');
         return NextResponse.json(
-            { message: '내부 서버 오류: visitorId 식별 불가'},
+            { message: '내부 서버 오류: visitorId 식별 불가' },
             { status: 500 }
         );
     }
@@ -130,10 +130,10 @@ export async function PATCH(
     }
 
     try {
-        const room = await prisma.room.findUnique({ where: {id: roomId} });
+        const room = await prisma.room.findUnique({ where: { id: roomId } });
         if (!room) {
             return NextResponse.json(
-                { message: `방 #${roomId} 을 찾을 수 없습니다.`},
+                { message: `방 #${roomId} 을 찾을 수 없습니다.` },
                 { status: 404 }
             );
         }
@@ -147,16 +147,16 @@ export async function PATCH(
 
         if (!question) {
             return NextResponse.json(
-                { message: `방 #${roomId} 에서 질문 #${questionId} 을 찾을 수 없습니다.`},
+                { message: `방 #${roomId} 에서 질문 #${questionId} 을 찾을 수 없습니다.` },
                 { status: 404 }
             );
         }
-        
+
         // 트랜잭션을 사용하여 질문의 is_selected 상태를 변경
         const result = await prisma.$transaction(async (tx) => {
             // 해당 방의 모든 질문들의 is_selected를 false로 변경
             await tx.question.updateMany({
-                where: { room_id: roomId},
+                where: { room_id: roomId },
                 data: { is_selected: false },
             });
 
@@ -173,6 +173,17 @@ export async function PATCH(
             room_id: result.room_id.toString(),
             selected: result.question_id.toString(),
         }
+
+        // 질문 하이라이트 - 소켓 처리
+        const io = getIO();
+        if (!io) {
+            console.error('Socket.IO 서버가 아직 초기화되지 않았습니다.');
+            return NextResponse.json({ message: '소켓 서버 미초기화' }, { status: 500 });
+        }
+
+        io.to(`room_${roomId}`).emit('receiveHighlight', {
+            question_id: questionId.toString(),
+        });
 
         return NextResponse.json(
             responseBody,
