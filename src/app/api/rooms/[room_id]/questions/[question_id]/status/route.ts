@@ -2,7 +2,8 @@
 // [room_id] 방의 [question_id]질문 is_answered 상태 변경 (PATCH)
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma'; // 싱글톤 패턴 적용
+import { prisma } from '@/lib/prisma';
+import {getIO} from "@/lib/socketInstance"; // 싱글톤 패턴 적용
 
 export async function PATCH(
     // middleware.ts를 거쳐 전달받은 요청 객체
@@ -91,6 +92,16 @@ export async function PATCH(
             likes: updatedQuestion.likes.toString(),
             is_answered: updatedQuestion.is_answered
         }
+
+        const io = getIO();
+        if (!io) {
+            console.error('Socket.IO 서버가 아직 초기화되지 않았습니다.');
+            return NextResponse.json({ message: '소켓 서버 미초기화' }, { status: 500 });
+        }
+
+        io.to(`room_${roomId}`).emit('checkQuestion', {
+            question_id: questionId.toString(),
+        });
 
         return NextResponse.json(
             responseBody,
