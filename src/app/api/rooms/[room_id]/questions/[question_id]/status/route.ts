@@ -14,7 +14,6 @@ export async function PATCH(
     context: {params: { room_id: string, question_id: string}}
 ) {
     // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인
-    console.log('gmlgmlgmlgmlgmlml')
     const visitorId = req.headers.get('visitor-id');
     if (visitorId === null || visitorId === undefined) {
         console.error('미들웨어에서 visitorId 헤더가 전달되지 않았습니다');
