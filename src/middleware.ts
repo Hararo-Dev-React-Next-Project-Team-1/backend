@@ -45,7 +45,8 @@ export async function middleware(req: NextRequest) {
   // '*' 대신 허용할 특정 출처를 설정하는 것이 보안상 더 좋음.
   // 여러 출처를 허용해야 한다면 req.headers.get('Origin') 값을 확인해서 동적으로 설정.
   const origin = req.headers.get('Origin') || ''; // 요청 Origin 가져오기
-  const allowedOrigins = ['http://localhost:5173']; // ✨ 허용할 출처 목록 ✨
+  // const allowedOrigins = ['http://localhost:5173']; // ✨ 허용할 출처 목록 ✨
+  const allowedOrigins = ['http://172.16.21.167:5173']; // ✨ 허용할 출처 목록 ✨
   
   if (allowedOrigins.includes(origin)) {
       res.headers.set('Access-Control-Allow-Origin', origin);
