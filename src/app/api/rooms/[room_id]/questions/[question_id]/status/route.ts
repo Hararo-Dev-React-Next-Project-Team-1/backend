@@ -2,7 +2,8 @@
 // [room_id] 방의 [question_id]질문 is_answered 상태 변경 (PATCH)
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma'; // 싱글톤 패턴 적용
+import { prisma } from '@/lib/prisma';
+import {getIO} from "@/lib/socketInstance"; // 싱글톤 패턴 적용
 
 export async function PATCH(
     // middleware.ts를 거쳐 전달받은 요청 객체
@@ -13,6 +14,7 @@ export async function PATCH(
     context: {params: { room_id: string, question_id: string}}
 ) {
     // middleware.ts에서 헤더에 visitor-id 값을 설정했으므로 값을 가져와서 확인
+    console.log('gmlgmlgmlgmlgmlml')
     const visitorId = req.headers.get('visitor-id');
     if (visitorId === null || visitorId === undefined) {
         console.error('미들웨어에서 visitorId 헤더가 전달되지 않았습니다');
@@ -91,6 +93,16 @@ export async function PATCH(
             likes: updatedQuestion.likes.toString(),
             is_answered: updatedQuestion.is_answered
         }
+
+        const io = getIO();
+        if (!io) {
+            console.error('Socket.IO 서버가 아직 초기화되지 않았습니다.');
+            return NextResponse.json({ message: '소켓 서버 미초기화' }, { status: 500 });
+        }
+
+        io.to(`room_${roomId}`).emit('checkQuestion', {
+            question_id: questionId.toString(),
+        });
 
         return NextResponse.json(
             responseBody,
