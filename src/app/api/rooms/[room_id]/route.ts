@@ -13,7 +13,7 @@ export async function GET(
   { params }: { params: { room_id: string } }
 ) {
   try {
-    const roomId = Number(params.room_id);
+    const roomId =  await Number(params.room_id);
 
     if (isNaN(roomId)) {
       return NextResponse.json(
